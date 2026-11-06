@@ -1,0 +1,22 @@
+name: Render
+on: workflow_dispatch
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: WORKERS=3 npm run stills
+      - run: WORKERS=3 npm run render
+      - run: npm run video
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: |
+            out/short_silent.mp4
+            stills

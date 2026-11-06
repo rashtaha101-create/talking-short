@@ -25,8 +25,3 @@ jobs:
         with:
           name: frames
           path: frames
-        with:
-          name: video
-          path: |
-            out/short_silent.mp4
-            stills

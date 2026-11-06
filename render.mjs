@@ -14,6 +14,7 @@ if (!fs.existsSync(path.join(root, 'node_modules/three/build/three.module.js')))
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/favicon')) { res.writeHead(204); return res.end(); }
   const p = path.normalize(path.join(root, decodeURIComponent(req.url.split('?')[0])));
   if (!p.startsWith(root) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'Content-Type': MIME[path.extname(p)] || 'application/octet-stream' }); fs.createReadStream(p).pipe(res);
@@ -27,8 +28,17 @@ const t0 = Date.now(); let done = 0;
 async function worker(id) {
   const page = await browser.newPage({ viewport: { width: 540, height: 960 } });
   page.on('pageerror', (e) => { console.error('PAGE ERROR:', e.message); process.exitCode = 1; });
-  page.on('console', (m) => { if (m.type() === 'error') console.error('browser:', m.text()); });
-  await page.goto(url); await page.waitForFunction('window.ready===true', null, { timeout: 120000 });
+  page.on('console', (m) => console.log(`[browser ${m.type()}]`, m.text()));
+  page.on('response', (r) => { if (r.status() >= 400) console.log('HTTP', r.status(), r.url()); });
+  page.on('requestfailed', (r) => console.log('REQUEST FAILED', r.url(), r.failure()?.errorText));
+  await page.goto(url);
+  try { await page.waitForFunction('window.ready===true', null, { timeout: 60000 }); }
+  catch (e) {
+    const st = await page.evaluate(() => ({ ready: window.ready, scripts: [...document.scripts].map((x) => x.src || 'inline'), canvases: document.querySelectorAll('canvas').length })).catch((x) => String(x));
+    console.error('PAGE NEVER BECAME READY. State:', JSON.stringify(st), '\nURL:', url);
+    for (const f of ['web/index.html', 'web/main.js', 'web/story.js', 'web/paint.js', 'web/baker.js', 'node_modules/three/build/three.module.js']) console.error(f, fs.existsSync(path.join(root, f)) ? 'exists' : 'MISSING');
+    process.exit(1);
+  }
   for (let i = id; i < todo.length; i += workers) {
     const f = todo[i];
     const data = await page.evaluate((fr) => { window.renderFrame(fr); return document.querySelector('canvas').toDataURL('image/jpeg', 0.95); }, f);

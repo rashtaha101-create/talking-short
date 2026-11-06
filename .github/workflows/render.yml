@@ -13,8 +13,18 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: WORKERS=3 npm run stills
       - run: WORKERS=3 npm run render
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm run video
       - uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: |
+            out/short_silent.mp4
+            stills
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames
+          path: frames
         with:
           name: video
           path: |

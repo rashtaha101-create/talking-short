@@ -20,7 +20,8 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': MIME[path.extname(p)] || 'application/octet-stream' }); fs.createReadStream(p).pipe(res);
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const url = `http://127.0.0.1:${server.address().port}/web/index.html?scale=${scale}`;
+const pagePath = fs.existsSync(path.join(root, 'web/index.html')) ? '/web/index.html' : '/index.html';
+const url = `http://127.0.0.1:${server.address().port}${pagePath}?scale=${scale}`;
 
 const args = process.env.GPU ? ['--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 const browser = await chromium.launch({ args });

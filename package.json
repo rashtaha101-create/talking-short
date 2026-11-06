@@ -1,0 +1,16 @@
+{
+  "name": "talking-short",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "npx playwright install chromium",
+    "stills": "node render.mjs stills 0,45,95,150,180,215,240,265,299 --scale=0.5",
+    "render": "node render.mjs frames 0-299",
+    "video": "node makevideo.mjs"
+  },
+  "dependencies": {
+    "three": "0.160.0",
+    "playwright": "1.49.1"
+  }
+}
